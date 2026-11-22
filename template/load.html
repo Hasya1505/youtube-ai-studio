@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Load Video – YouTube AI Studio</title>
+<style>
+/* ===== RESET & BASE ===== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;background:#f0f9ff;color:#0f172a;min-height:100vh;line-height:1.6}
+a{text-decoration:none;color:inherit}
+button{cursor:pointer;font-family:inherit}
+input{font-family:inherit}
+
+/* ===== NAV ===== */
+.nav{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:60px;background:#fff;border-bottom:1px solid #bae6fd;position:sticky;top:0;z-index:100}
+.nav-brand{font-weight:700;font-size:18px;color:#0284c7}
+.nav-links{display:flex;gap:6px}
+.nav-links a{padding:8px 16px;border-radius:8px;font-size:14px;font-weight:500;color:#475569;transition:all .2s}
+.nav-links a:hover{background:#e0f2fe;color:#0284c7}
+.nav-links a.active{background:#0284c7;color:#fff}
+.nav-status{font-size:13px;color:#475569;background:#f0f9ff;border:1px solid #bae6fd;padding:4px 12px;border-radius:999px;white-space:nowrap}
+
+/* ===== LAYOUT ===== */
+.container{max-width:860px;margin:0 auto;padding:32px 20px}
+
+/* ===== CARDS ===== */
+.card{background:#fff;border:1px solid #bae6fd;border-radius:16px;padding:28px;margin-bottom:24px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.card-title{font-size:20px;font-weight:700;margin-bottom:6px;color:#0f172a}
+.card-sub{font-size:14px;color:#475569;margin-bottom:20px}
+
+/* ===== HERO INPUT ===== */
+.input-row{display:flex;gap:10px;margin-bottom:12px}
+.input-row input{flex:1;padding:12px 16px;border:1px solid #bae6fd;border-radius:10px;font-size:15px;outline:none;transition:border .2s}
+.input-row input:focus{border-color:#0284c7;box-shadow:0 0 0 3px rgba(2,132,199,.12)}
+.btn{padding:12px 24px;border:none;border-radius:10px;font-size:14px;font-weight:600;transition:all .2s}
+.btn-primary{background:#0284c7;color:#fff}
+.btn-primary:hover{background:#0369a1}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.btn-secondary{background:#e0f2fe;color:#0284c7;border:1px solid #bae6fd}
+.btn-secondary:hover{background:#bae6fd}
+.sample-btn{font-size:13px;color:#0284c7;background:none;border:none;text-decoration:underline;cursor:pointer;margin-bottom:16px;display:inline-block}
+
+/* ===== ENGINE CARDS ===== */
+.engine-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+.engine-card{padding:18px;border:2px solid #bae6fd;border-radius:12px;cursor:pointer;transition:all .2s;text-align:center}
+.engine-card:hover{border-color:#0284c7;background:#f0f9ff}
+.engine-card.selected{border-color:#0284c7;background:#e0f2fe;box-shadow:0 0 0 3px rgba(2,132,199,.15)}
+.engine-card h3{font-size:15px;font-weight:700;margin-bottom:4px;color:#0f172a}
+.engine-card p{font-size:12px;color:#475569}
+.key-toggle{font-size:13px;color:#0284c7;cursor:pointer;border:none;background:none;margin-top:8px;text-decoration:underline}
+.key-input-wrap{margin-top:12px;display:none}
+.key-input-wrap.show{display:block}
+.key-input-wrap input{width:100%;padding:10px 14px;border:1px solid #bae6fd;border-radius:8px;font-size:14px;outline:none}
+
+/* ===== RESULT / PREVIEW ===== */
+.result-area{display:none}
+.video-preview{position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:12px;margin-bottom:18px;background:#0f172a}
+.video-preview iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:none;border-radius:12px}
+.badges{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px}
+.badge{padding:6px 14px;border-radius:999px;font-size:13px;font-weight:600;background:#e0f2fe;color:#0284c7;border:1px solid #bae6fd}
+.badge.hit{background:#dcfce7;color:#15803d;border-color:#bbf7d0}
+.badge.miss{background:#fef9c3;color:#a16207;border-color:#fde68a}
+.action-btns{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.action-btns .btn{padding:16px;font-size:15px;text-align:center;border-radius:12px}
+
+/* ===== ERROR ===== */
+.error-box{padding:14px 18px;border-radius:10px;background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;font-size:14px;margin-bottom:16px;display:none}
+
+/* ===== SPINNER ===== */
+.spinner{display:inline-block;width:18px;height:18px;border:3px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:600px){
+  .engine-grid,.action-btns{grid-template-columns:1fr}
+  .nav{padding:0 14px;gap:8px}
+  .nav-links a{padding:6px 10px;font-size:13px}
+  .input-row{flex-direction:column}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== NAV ===== -->
+<nav class="nav">
+  <div class="nav-brand">YouTube AI Studio</div>
+  <div class="nav-links">
+    <a href="/" class="active">1. Load Video</a>
+    <a href="/summarize">2. Summarize</a>
+    <a href="/chatbot">3. ChatBot</a>
+  </div>
+  <div class="nav-status" id="navStatus">No video loaded</div>
+</nav>
+
+<!-- ===== MAIN ===== -->
+<div class="container">
+
+  <!-- HERO INPUT CARD -->
+  <div class="card">
+    <h2 class="card-title">Load YouTube Video</h2>
+    <p class="card-sub">Paste any YouTube URL to extract and cache the transcript for AI analysis.</p>
+    <div class="input-row">
+      <input type="text" id="urlInput" placeholder="https://www.youtube.com/watch?v=..." autocomplete="off">
+      <button class="btn btn-primary" id="loadBtn" onclick="loadVideo()">Load &amp; Extract Transcript</button>
+    </div>
+    <button class="sample-btn" onclick="fillSample()">Try sample: YouTube CEO interview</button>
+    <div class="error-box" id="loadError"></div>
+  </div>
+
+  <!-- ENGINE SELECTOR CARD -->
+  <div class="card">
+    <h2 class="card-title">Select AI Engine</h2>
+    <p class="card-sub">Choose which Free-Tier API powers your summaries and chat.</p>
+    <div class="engine-grid">
+      <div class="engine-card selected" id="engineGemini" onclick="selectEngine('gemini')">
+        <h3>Google Gemini Free Tier</h3>
+        <p>gemini-2.5-flash &bull; Best for long full-video summaries</p>
+      </div>
+      <div class="engine-card" id="engineGroq" onclick="selectEngine('groq')">
+        <h3>Groq Free Tier LPU</h3>
+        <p>llama-3.3-70b-versatile &bull; Ultra-fast responses</p>
+      </div>
+    </div>
+    <button class="key-toggle" onclick="toggleKeyInput()">Custom API Key (Optional — overrides .env)</button>
+    <div class="key-input-wrap" id="keyWrap">
+      <input type="password" id="apiKeyInput" placeholder="Paste your API key here...">
+    </div>
+  </div>
+
+  <!-- RESULT AREA -->
+  <div class="result-area" id="resultArea">
+    <div class="card">
+      <h2 class="card-title">Video Loaded Successfully</h2>
+      <div class="video-preview">
+        <iframe id="videoFrame" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+      </div>
+      <div class="badges" id="badges"></div>
+      <div class="action-btns">
+        <a class="btn btn-primary" id="goSummary">Open Summary Pipeline →</a>
+        <a class="btn btn-secondary" id="goChatbot">Open RAG ChatBot Pipeline →</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ===== STATE ===== */
+let currentProvider = sessionStorage.getItem('yt_provider') || 'gemini';
+let loadedVideoId = sessionStorage.getItem('yt_video_id') || '';
+
+(function init() {
+  // Restore engine selection
+  selectEngine(currentProvider, true);
+  // Restore API key
+  const savedKey = sessionStorage.getItem('yt_custom_api_key') || '';
+  if(savedKey) { document.getElementById('apiKeyInput').value = savedKey; }
+  // Restore URL
+  const savedUrl = sessionStorage.getItem('yt_url') || '';
+  if(savedUrl) { document.getElementById('urlInput').value = savedUrl; }
+  // Update nav status
+  updateNavStatus();
+})();
+
+function updateNavStatus(){
+  const el = document.getElementById('navStatus');
+  if(loadedVideoId){
+    el.textContent = loadedVideoId + ' • ' + (currentProvider === 'gemini' ? 'Gemini' : 'Groq');
+  } else {
+    el.textContent = 'No video loaded';
+  }
+}
+
+function selectEngine(provider, silent){
+  currentProvider = provider;
+  sessionStorage.setItem('yt_provider', provider);
+  document.getElementById('engineGemini').classList.toggle('selected', provider === 'gemini');
+  document.getElementById('engineGroq').classList.toggle('selected', provider === 'groq');
+  if(!silent) updateNavStatus();
+}
+
+function toggleKeyInput(){
+  document.getElementById('keyWrap').classList.toggle('show');
+}
+
+function fillSample(){
+  document.getElementById('urlInput').value = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+}
+
+async function loadVideo(){
+  const url = document.getElementById('urlInput').value.trim();
+  const errBox = document.getElementById('loadError');
+  const btn = document.getElementById('loadBtn');
+  errBox.style.display = 'none';
+
+  if(!url){ errBox.textContent='Please enter a YouTube URL.'; errBox.style.display='block'; return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Loading…';
+
+  try {
+    const res = await fetch('/api/load', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({youtube_url: url})
+    });
+    const data = await res.json();
+
+    if(!res.ok){
+      errBox.textContent = data.error || 'Unknown error';
+      errBox.style.display = 'block';
+      return;
+    }
+
+    // Save state
+    loadedVideoId = data.video_id;
+    sessionStorage.setItem('yt_video_id', data.video_id);
+    sessionStorage.setItem('yt_url', url);
+    sessionStorage.setItem('yt_word_count', data.word_count);
+
+    const apiKey = document.getElementById('apiKeyInput').value.trim();
+    sessionStorage.setItem('yt_custom_api_key', apiKey);
+
+    updateNavStatus();
+
+    // Show result
+    document.getElementById('videoFrame').src = 'https://www.youtube.com/embed/' + data.video_id;
+    document.getElementById('badges').innerHTML =
+      '<span class="badge">Video ID: ' + data.video_id + '</span>' +
+      '<span class="badge">Words: ' + data.word_count.toLocaleString() + '</span>' +
+      '<span class="badge">Est. Tokens: ' + data.estimated_tokens.toLocaleString() + '</span>' +
+      '<span class="badge ' + (data.cached ? 'hit' : 'miss') + '">Cache: ' + (data.cached ? 'HIT' : 'SAVED') + '</span>';
+
+    document.getElementById('goSummary').href = '/summarize?v=' + data.video_id;
+    document.getElementById('goChatbot').href = '/chatbot?v=' + data.video_id;
+    document.getElementById('resultArea').style.display = 'block';
+
+  } catch(e){
+    errBox.textContent = 'Network error: ' + e.message;
+    errBox.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Load &amp; Extract Transcript';
+  }
+}
+</script>
+</body>
+</html>

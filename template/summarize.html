@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Summarize – YouTube AI Studio</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;background:#f0f9ff;color:#0f172a;min-height:100vh;line-height:1.6}
+a{text-decoration:none;color:inherit}
+button{cursor:pointer;font-family:inherit}
+
+/* NAV */
+.nav{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:60px;background:#fff;border-bottom:1px solid #bae6fd;position:sticky;top:0;z-index:100}
+.nav-brand{font-weight:700;font-size:18px;color:#0284c7}
+.nav-links{display:flex;gap:6px}
+.nav-links a{padding:8px 16px;border-radius:8px;font-size:14px;font-weight:500;color:#475569;transition:all .2s}
+.nav-links a:hover{background:#e0f2fe;color:#0284c7}
+.nav-links a.active{background:#0284c7;color:#fff}
+.nav-status{font-size:13px;color:#475569;background:#f0f9ff;border:1px solid #bae6fd;padding:4px 12px;border-radius:999px;white-space:nowrap}
+
+/* LAYOUT */
+.container{max-width:900px;margin:0 auto;padding:32px 20px}
+.card{background:#fff;border:1px solid #bae6fd;border-radius:16px;padding:28px;margin-bottom:24px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.card-title{font-size:20px;font-weight:700;margin-bottom:6px}
+.card-sub{font-size:14px;color:#475569;margin-bottom:20px}
+
+/* BUTTONS */
+.btn{padding:12px 24px;border:none;border-radius:10px;font-size:14px;font-weight:600;transition:all .2s}
+.btn-primary{background:#0284c7;color:#fff}
+.btn-primary:hover{background:#0369a1}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.btn-secondary{background:#e0f2fe;color:#0284c7;border:1px solid #bae6fd}
+.btn-secondary:hover{background:#bae6fd}
+
+/* PROVIDER PILLS */
+.pills{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.pill{padding:8px 18px;border-radius:999px;font-size:13px;font-weight:600;border:2px solid #bae6fd;background:#fff;color:#475569;cursor:pointer;transition:all .2s}
+.pill:hover{border-color:#0284c7;color:#0284c7}
+.pill.active{background:#0284c7;color:#fff;border-color:#0284c7}
+
+/* HEADER BAR */
+.header-bar{display:flex;align-items:center;gap:14px;margin-bottom:18px;flex-wrap:wrap}
+.thumb-mini{width:120px;height:68px;border-radius:8px;object-fit:cover;background:#e0f2fe}
+.header-bar .info{flex:1}
+.header-bar .info h3{font-size:16px;font-weight:700}
+.header-bar .info p{font-size:13px;color:#475569}
+
+/* OUTPUT */
+.summary-output{display:none}
+.exec-badge{display:inline-block;padding:6px 14px;border-radius:999px;font-size:12px;font-weight:600;background:#e0f2fe;color:#0284c7;border:1px solid #bae6fd;margin-bottom:16px}
+.summary-content{font-size:15px;line-height:1.75;color:#1e293b}
+.summary-content h1,.summary-content h2,.summary-content h3{margin-top:20px;margin-bottom:8px;color:#0f172a}
+.summary-content h3{font-size:16px}
+.summary-content ul,.summary-content ol{margin-left:20px;margin-bottom:12px}
+.summary-content li{margin-bottom:4px}
+.summary-content strong{color:#0f172a}
+.toolbar{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
+
+/* ERROR */
+.error-box{padding:14px 18px;border-radius:10px;background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;font-size:14px;margin-bottom:16px;display:none}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:60px 20px}
+.empty-state h2{font-size:22px;margin-bottom:8px}
+.empty-state p{font-size:14px;color:#475569;margin-bottom:20px}
+
+/* SPINNER */
+.spinner{display:inline-block;width:18px;height:18px;border:3px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* RESPONSIVE */
+@media(max-width:600px){
+  .nav{padding:0 14px;gap:8px}
+  .nav-links a{padding:6px 10px;font-size:13px}
+  .header-bar{flex-direction:column;align-items:flex-start}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-brand">YouTube AI Studio</div>
+  <div class="nav-links">
+    <a href="/">1. Load Video</a>
+    <a href="/summarize" class="active">2. Summarize</a>
+    <a href="/chatbot">3. ChatBot</a>
+  </div>
+  <div class="nav-status" id="navStatus">No video loaded</div>
+</nav>
+
+<div class="container">
+
+  <!-- EMPTY STATE (no video) -->
+  <div class="card empty-state" id="emptyState" style="display:none">
+    <h2>No Video Loaded</h2>
+    <p>Please load a YouTube video first before generating a summary.</p>
+    <a href="/" class="btn btn-primary">← Go to Load Video</a>
+  </div>
+
+  <!-- CONTROL HEADER -->
+  <div id="mainContent" style="display:none">
+    <div class="card">
+      <div class="header-bar">
+        <img class="thumb-mini" id="thumbImg" src="" alt="thumbnail">
+        <div class="info">
+          <h3 id="videoIdLabel">Video</h3>
+          <p id="wordCountLabel">–</p>
+        </div>
+      </div>
+
+      <label style="font-size:13px;font-weight:600;color:#475569;display:block;margin-bottom:6px">AI Provider</label>
+      <div class="pills" id="providerPills">
+        <div class="pill active" data-val="gemini" onclick="setProvider('gemini')">Gemini</div>
+        <div class="pill" data-val="groq" onclick="setProvider('groq')">Groq</div>
+      </div>
+
+      <label style="font-size:13px;font-weight:600;color:#475569;display:block;margin-bottom:6px">Summary Style</label>
+      <div class="pills" id="stylePills">
+        <div class="pill active" data-val="executive" onclick="setStyle('executive')">Executive Brief</div>
+        <div class="pill" data-val="detailed_notes" onclick="setStyle('detailed_notes')">Detailed Study Notes</div>
+        <div class="pill" data-val="bullet_takeaways" onclick="setStyle('bullet_takeaways')">Key Bullet Takeaways</div>
+      </div>
+
+      <button class="btn btn-primary" id="genBtn" onclick="generateSummary()">Generate Summary</button>
+      <div class="error-box" id="summaryError" style="margin-top:14px"></div>
+    </div>
+
+    <!-- OUTPUT -->
+    <div class="card summary-output" id="outputCard">
+      <span class="exec-badge" id="execBadge"></span>
+      <div class="summary-content" id="summaryContent"></div>
+      <div class="toolbar">
+        <button class="btn btn-secondary" onclick="copySummary()">Copy Summary</button>
+        <button class="btn btn-secondary" onclick="generateSummary()">Regenerate</button>
+        <a class="btn btn-secondary" id="goChatbot">Ask Questions in ChatBot →</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ===== State ===== */
+let videoId = '';
+let provider = 'gemini';
+let style = 'executive';
+let rawSummary = '';
+
+(function init(){
+  const params = new URLSearchParams(window.location.search);
+  videoId = params.get('v') || sessionStorage.getItem('yt_video_id') || '';
+  provider = sessionStorage.getItem('yt_provider') || 'gemini';
+
+  if(!videoId){
+    document.getElementById('emptyState').style.display='block';
+    return;
+  }
+
+  document.getElementById('mainContent').style.display='block';
+  document.getElementById('thumbImg').src = 'https://img.youtube.com/vi/' + videoId + '/mqdefault.jpg';
+  document.getElementById('videoIdLabel').textContent = 'Video: ' + videoId;
+  const wc = sessionStorage.getItem('yt_word_count');
+  document.getElementById('wordCountLabel').textContent = wc ? wc + ' words' : '';
+  document.getElementById('goChatbot').href = '/chatbot?v=' + videoId;
+
+  setProvider(provider, true);
+  updateNav();
+})();
+
+function updateNav(){
+  const el = document.getElementById('navStatus');
+  el.textContent = videoId ? (videoId + ' • ' + (provider==='gemini'?'Gemini':'Groq')) : 'No video loaded';
+}
+
+function setProvider(p, silent){
+  provider = p;
+  sessionStorage.setItem('yt_provider', p);
+  document.querySelectorAll('#providerPills .pill').forEach(el=>{
+    el.classList.toggle('active', el.dataset.val === p);
+  });
+  if(!silent) updateNav();
+}
+
+function setStyle(s){
+  style = s;
+  document.querySelectorAll('#stylePills .pill').forEach(el=>{
+    el.classList.toggle('active', el.dataset.val === s);
+  });
+}
+
+/* ===== Markdown to HTML (lightweight) ===== */
+function md(text){
+  let html = text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/^### (.+)$/gm,'<h3>$1</h3>')
+    .replace(/^## (.+)$/gm,'<h2>$1</h2>')
+    .replace(/^# (.+)$/gm,'<h1>$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/^\* (.+)$/gm,'<li>$1</li>')
+    .replace(/^- (.+)$/gm,'<li>$1</li>')
+    .replace(/^\d+\.\s+(.+)$/gm,'<li>$1</li>');
+
+  // Wrap consecutive <li> in <ul>
+  html = html.replace(/((?:<li>.*<\/li>\n?)+)/g,'<ul>$1</ul>');
+  // Line breaks for remaining lines
+  html = html.replace(/\n{2,}/g,'<br><br>').replace(/\n/g,'<br>');
+  return html;
+}
+
+/* ===== Generate ===== */
+async function generateSummary(){
+  const btn = document.getElementById('genBtn');
+  const errBox = document.getElementById('summaryError');
+  errBox.style.display = 'none';
+  document.getElementById('outputCard').style.display = 'none';
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Generating…';
+
+  try {
+    const res = await fetch('/api/summarize', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        video_id: videoId,
+        provider: provider,
+        summary_style: style,
+        api_key: sessionStorage.getItem('yt_custom_api_key') || ''
+      })
+    });
+    const data = await res.json();
+
+    if(!res.ok){
+      errBox.textContent = data.error || 'Unknown error';
+      errBox.style.display = 'block';
+      return;
+    }
+
+    rawSummary = data.summary;
+
+    const modeLabel = data.mode === 'map_reduce' ? 'Token-Safe Chunked' : 'Single-Pass';
+    document.getElementById('execBadge').textContent = 'Generated via ' + data.model_used + ' • ' + modeLabel;
+    document.getElementById('summaryContent').innerHTML = md(data.summary);
+    document.getElementById('outputCard').style.display = 'block';
+
+  } catch(e){
+    errBox.textContent = 'Network error: ' + e.message;
+    errBox.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Generate Summary';
+  }
+}
+
+function copySummary(){
+  navigator.clipboard.writeText(rawSummary).then(()=>{
+    const btn = event.target;
+    btn.textContent = 'Copied!';
+    setTimeout(()=>{ btn.textContent = 'Copy Summary'; }, 1500);
+  });
+}
+</script>
+</body>
+</html>

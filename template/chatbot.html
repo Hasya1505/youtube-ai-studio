@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChatBot – YouTube AI Studio</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;background:#f0f9ff;color:#0f172a;min-height:100vh;line-height:1.6}
+a{text-decoration:none;color:inherit}
+button{cursor:pointer;font-family:inherit}
+
+/* NAV */
+.nav{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:60px;background:#fff;border-bottom:1px solid #bae6fd;position:sticky;top:0;z-index:100}
+.nav-brand{font-weight:700;font-size:18px;color:#0284c7}
+.nav-links{display:flex;gap:6px}
+.nav-links a{padding:8px 16px;border-radius:8px;font-size:14px;font-weight:500;color:#475569;transition:all .2s}
+.nav-links a:hover{background:#e0f2fe;color:#0284c7}
+.nav-links a.active{background:#0284c7;color:#fff}
+.nav-status{font-size:13px;color:#475569;background:#f0f9ff;border:1px solid #bae6fd;padding:4px 12px;border-radius:999px;white-space:nowrap}
+
+/* LAYOUT */
+.container{max-width:1200px;margin:0 auto;padding:24px 20px}
+.two-col{display:grid;grid-template-columns:380px 1fr;gap:24px;align-items:start}
+
+.card{background:#fff;border:1px solid #bae6fd;border-radius:16px;padding:24px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.card-title{font-size:18px;font-weight:700;margin-bottom:6px}
+.card-sub{font-size:13px;color:#475569;margin-bottom:14px}
+
+/* BUTTONS & PILLS */
+.btn{padding:10px 20px;border:none;border-radius:10px;font-size:14px;font-weight:600;transition:all .2s}
+.btn-primary{background:#0284c7;color:#fff}
+.btn-primary:hover{background:#0369a1}
+.btn-sm{padding:6px 14px;font-size:12px}
+.pills{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.pill{padding:6px 16px;border-radius:999px;font-size:13px;font-weight:600;border:2px solid #bae6fd;background:#fff;color:#475569;cursor:pointer;transition:all .2s}
+.pill:hover{border-color:#0284c7;color:#0284c7}
+.pill.active{background:#0284c7;color:#fff;border-color:#0284c7}
+
+/* VIDEO EMBED */
+.video-embed{position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:12px;margin-bottom:16px;background:#0f172a}
+.video-embed iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:none;border-radius:12px}
+
+/* BADGES */
+.badge{display:inline-block;padding:5px 12px;border-radius:999px;font-size:12px;font-weight:600;background:#dcfce7;color:#15803d;border:1px solid #bbf7d0;margin-right:6px;margin-bottom:6px}
+.badge.info{background:#e0f2fe;color:#0284c7;border-color:#bae6fd}
+.badge.warn{background:#fef9c3;color:#a16207;border-color:#fde68a}
+
+/* STARTER CHIPS */
+.chips{display:flex;flex-direction:column;gap:8px}
+.chip{padding:10px 14px;border-radius:10px;font-size:13px;border:1px solid #bae6fd;background:#f8fafc;cursor:pointer;transition:all .2s;text-align:left;color:#334155}
+.chip:hover{background:#e0f2fe;border-color:#0284c7;color:#0284c7}
+
+/* CHAT */
+.chat-container{display:flex;flex-direction:column;height:calc(100vh - 120px);min-height:500px}
+.chat-feed{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:14px}
+.msg{max-width:85%;padding:14px 18px;border-radius:14px;font-size:14px;line-height:1.65;word-break:break-word}
+.msg.user{align-self:flex-end;background:#0284c7;color:#fff;border-bottom-right-radius:4px}
+.msg.assistant{align-self:flex-start;background:#fff;border:1px solid #bae6fd;color:#1e293b;border-bottom-left-radius:4px}
+.msg.assistant h1,.msg.assistant h2,.msg.assistant h3{margin-top:12px;margin-bottom:6px;font-size:15px}
+.msg.assistant ul,.msg.assistant ol{margin-left:18px;margin-bottom:8px}
+.msg.assistant li{margin-bottom:3px}
+.msg.assistant strong{color:#0f172a}
+
+/* SOURCES DETAILS */
+.sources-toggle{margin-top:10px}
+.sources-toggle summary{font-size:12px;color:#0284c7;cursor:pointer;font-weight:600}
+.sources-content{margin-top:8px;padding:10px;background:#f8fafc;border-radius:8px;font-size:12px;color:#475569;max-height:200px;overflow-y:auto;white-space:pre-wrap}
+
+/* INPUT BAR */
+.input-bar{display:flex;gap:10px;padding:16px;border-top:1px solid #bae6fd;background:#fff;border-radius:0 0 16px 16px}
+.input-bar input{flex:1;padding:12px 16px;border:1px solid #bae6fd;border-radius:10px;font-size:14px;outline:none}
+.input-bar input:focus{border-color:#0284c7;box-shadow:0 0 0 3px rgba(2,132,199,.12)}
+
+/* RATE LIMIT BANNER */
+.rate-banner{padding:12px 16px;background:#fef9c3;border:1px solid #fde68a;border-radius:10px;color:#92400e;font-size:13px;text-align:center;display:none;margin:0 16px}
+
+/* ERROR / EMPTY */
+.error-box{padding:14px 18px;border-radius:10px;background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;font-size:14px;margin-bottom:16px;display:none}
+.empty-state{text-align:center;padding:60px 20px}
+.empty-state h2{font-size:22px;margin-bottom:8px}
+.empty-state p{font-size:14px;color:#475569;margin-bottom:20px}
+
+/* SPINNER */
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(2,132,199,.2);border-top-color:#0284c7;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* LOADING DOT */
+.typing{align-self:flex-start;padding:14px 18px;background:#fff;border:1px solid #bae6fd;border-radius:14px;border-bottom-left-radius:4px}
+.typing span{display:inline-block;width:8px;height:8px;background:#94a3b8;border-radius:50%;margin-right:4px;animation:bounce .6s infinite alternate}
+.typing span:nth-child(2){animation-delay:.15s}
+.typing span:nth-child(3){animation-delay:.3s}
+@keyframes bounce{to{transform:translateY(-6px);opacity:.4}}
+
+/* RESPONSIVE */
+@media(max-width:800px){
+  .two-col{grid-template-columns:1fr}
+  .chat-container{height:auto;min-height:400px}
+  .nav{padding:0 14px;gap:8px}
+  .nav-links a{padding:6px 10px;font-size:13px}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-brand">YouTube AI Studio</div>
+  <div class="nav-links">
+    <a href="/">1. Load Video</a>
+    <a href="/summarize">2. Summarize</a>
+    <a href="/chatbot" class="active">3. ChatBot</a>
+  </div>
+  <div class="nav-status" id="navStatus">No video loaded</div>
+</nav>
+
+<div class="container">
+
+  <!-- EMPTY STATE -->
+  <div class="card empty-state" id="emptyState" style="display:none">
+    <h2>No Video Loaded</h2>
+    <p>Please load a YouTube video first before using the RAG ChatBot.</p>
+    <a href="/" class="btn btn-primary">← Go to Load Video</a>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div id="mainContent" style="display:none">
+    <div class="two-col">
+
+      <!-- LEFT COLUMN -->
+      <div>
+        <div class="card">
+          <div class="video-embed">
+            <iframe id="videoFrame" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">Index & Provider</h3>
+          <div id="indexBadges" style="margin-bottom:12px">
+            <span class="badge info">Initializing…</span>
+          </div>
+          <label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:6px">Provider</label>
+          <div class="pills" id="providerPills">
+            <div class="pill active" data-val="gemini" onclick="setProvider('gemini')">Gemini</div>
+            <div class="pill" data-val="groq" onclick="setProvider('groq')">Groq</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">Quick Prompts</h3>
+          <div class="chips">
+            <div class="chip" onclick="askChip(this)">What are the main arguments in this video?</div>
+            <div class="chip" onclick="askChip(this)">Explain the core concepts step-by-step</div>
+            <div class="chip" onclick="askChip(this)">List any tools, frameworks, or examples mentioned</div>
+            <div class="chip" onclick="askChip(this)">What conclusion does the speaker reach?</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN: CHAT -->
+      <div class="card" style="padding:0;overflow:hidden;display:flex;flex-direction:column">
+        <div style="padding:16px 20px;border-bottom:1px solid #bae6fd;display:flex;align-items:center;justify-content:space-between">
+          <h3 style="font-size:16px;font-weight:700">Grounded RAG Chat</h3>
+          <button class="btn btn-sm btn-primary" onclick="clearChat()" style="background:#e0f2fe;color:#0284c7;border:1px solid #bae6fd">Clear Chat</button>
+        </div>
+
+        <div class="chat-container">
+          <div class="chat-feed" id="chatFeed">
+            <div class="msg assistant">
+              Welcome! I'm your AI assistant for this video. Ask me anything and I'll answer using only the transcript. 🎬
+            </div>
+          </div>
+          <div class="rate-banner" id="rateBanner">
+            ⚠️ Rate limit hit. Please wait 15–30 seconds or switch providers.
+          </div>
+          <div class="input-bar">
+            <input type="text" id="chatInput" placeholder="Ask a question about the video…" autocomplete="off">
+            <button class="btn btn-primary" id="sendBtn" onclick="sendMessage()">Send</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== State ===== */
+let videoId = '';
+let provider = 'gemini';
+let isAsking = false;
+
+(function init(){
+  const params = new URLSearchParams(window.location.search);
+  videoId = params.get('v') || sessionStorage.getItem('yt_video_id') || '';
+  provider = sessionStorage.getItem('yt_provider') || 'gemini';
+
+  if(!videoId){
+    document.getElementById('emptyState').style.display = 'block';
+    return;
+  }
+
+  document.getElementById('mainContent').style.display = 'block';
+  document.getElementById('videoFrame').src = 'https://www.youtube.com/embed/' + videoId;
+  setProvider(provider, true);
+  updateNav();
+
+  // Auto-init FAISS index
+  initIndex();
+
+  // Enter key to send
+  document.getElementById('chatInput').addEventListener('keydown', e => {
+    if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); }
+  });
+})();
+
+function updateNav(){
+  const el = document.getElementById('navStatus');
+  el.textContent = videoId ? (videoId + ' \u2022 ' + (provider==='gemini'?'Gemini':'Groq')) : 'No video loaded';
+}
+
+function setProvider(p, silent){
+  provider = p;
+  sessionStorage.setItem('yt_provider', p);
+  document.querySelectorAll('#providerPills .pill').forEach(el=>{
+    el.classList.toggle('active', el.dataset.val === p);
+  });
+  if(!silent) updateNav();
+}
+
+/* ===== Markdown to HTML ===== */
+function md(text){
+  let html = text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/^### (.+)$/gm,'<h3>$1</h3>')
+    .replace(/^## (.+)$/gm,'<h2>$1</h2>')
+    .replace(/^# (.+)$/gm,'<h1>$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/^\* (.+)$/gm,'<li>$1</li>')
+    .replace(/^- (.+)$/gm,'<li>$1</li>')
+    .replace(/^\d+\.\s+(.+)$/gm,'<li>$1</li>');
+  html = html.replace(/((?:<li>.*<\/li>\n?)+)/g,'<ul>$1</ul>');
+  html = html.replace(/\n{2,}/g,'<br><br>').replace(/\n/g,'<br>');
+  return html;
+}
+
+/* ===== FAISS Init ===== */
+async function initIndex(){
+  const badges = document.getElementById('indexBadges');
+  try {
+    const res = await fetch('/api/chat/init', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ video_id: videoId })
+    });
+    const data = await res.json();
+    if(!res.ok){
+      badges.innerHTML = '<span class="badge warn">Error: ' + (data.error||'Unknown') + '</span>';
+      return;
+    }
+    badges.innerHTML =
+      '<span class="badge">FAISS Ready</span>' +
+      '<span class="badge info">' + data.chunk_count + ' Chunks</span>' +
+      '<span class="badge">0 API Quota Used for Embeddings</span>' +
+      (data.index_cached ? '<span class="badge">Index: Cached</span>' : '<span class="badge info">Index: Built</span>');
+  } catch(e){
+    badges.innerHTML = '<span class="badge warn">Init failed: ' + e.message + '</span>';
+  }
+}
+
+/* ===== Chat ===== */
+function addMsg(role, html, sources){
+  const feed = document.getElementById('chatFeed');
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  div.innerHTML = html;
+
+  if(sources && sources.length > 0){
+    const details = document.createElement('details');
+    details.className = 'sources-toggle';
+    const summary = document.createElement('summary');
+    summary.textContent = 'View Retrieved Transcript Chunks (Top-' + sources.length + ')';
+    details.appendChild(summary);
+    const content = document.createElement('div');
+    content.className = 'sources-content';
+    content.textContent = sources.map((s,i) => '--- Chunk ' + (i+1) + ' ---\n' + s).join('\n\n');
+    details.appendChild(content);
+    div.appendChild(details);
+  }
+
+  feed.appendChild(div);
+  feed.scrollTop = feed.scrollHeight;
+  return div;
+}
+
+function addTyping(){
+  const feed = document.getElementById('chatFeed');
+  const div = document.createElement('div');
+  div.className = 'typing';
+  div.id = 'typingIndicator';
+  div.innerHTML = '<span></span><span></span><span></span>';
+  feed.appendChild(div);
+  feed.scrollTop = feed.scrollHeight;
+}
+
+function removeTyping(){
+  const el = document.getElementById('typingIndicator');
+  if(el) el.remove();
+}
+
+function askChip(el){
+  document.getElementById('chatInput').value = el.textContent;
+  sendMessage();
+}
+
+async function sendMessage(){
+  if(isAsking) return;
+  const input = document.getElementById('chatInput');
+  const question = input.value.trim();
+  if(!question) return;
+
+  input.value = '';
+  document.getElementById('rateBanner').style.display = 'none';
+  addMsg('user', question.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'));
+
+  isAsking = true;
+  document.getElementById('sendBtn').disabled = true;
+  addTyping();
+
+  try {
+    const res = await fetch('/api/chat/ask', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        video_id: videoId,
+        question: question,
+        provider: provider,
+        api_key: sessionStorage.getItem('yt_custom_api_key') || ''
+      })
+    });
+    const data = await res.json();
+    removeTyping();
+
+    if(res.status === 429){
+      document.getElementById('rateBanner').style.display = 'block';
+      addMsg('assistant', '⚠️ Rate limit reached. Please wait a moment and try again, or switch to a different provider.');
+      return;
+    }
+    if(!res.ok){
+      addMsg('assistant', '❌ Error: ' + (data.error||'Unknown error'));
+      return;
+    }
+
+    addMsg('assistant', md(data.answer), data.sources);
+
+  } catch(e){
+    removeTyping();
+    addMsg('assistant', '❌ Network error: ' + e.message);
+  } finally {
+    isAsking = false;
+    document.getElementById('sendBtn').disabled = false;
+    document.getElementById('chatInput').focus();
+  }
+}
+
+function clearChat(){
+  const feed = document.getElementById('chatFeed');
+  feed.innerHTML = '';
+  addMsg('assistant', 'Chat cleared. Ask me anything about this video! 🎬');
+  document.getElementById('rateBanner').style.display = 'none';
+}
+</script>
+</body>
+</html>
